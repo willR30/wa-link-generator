@@ -1,22 +1,488 @@
+/* =========================================================
+   TOKENS
+   Palette lifted from WhatsApp's own dark theme, so the
+   product looks like it belongs to the thing it generates
+   links for, rather than a generic dark-mode default.
+========================================================= */
+:root {
+    --wa-bg-0: #0b141a;
+    --wa-bg-1: #111b21;
+    --wa-panel: #182229;
+    --wa-input: #202c33;
+    --wa-border: #2a3942;
+    --wa-border-soft: rgba(134, 150, 160, 0.18);
+
+    --wa-green: #00a884;
+    --wa-green-light: #25d366;
+    --wa-green-wash: rgba(0, 168, 132, 0.14);
+
+    --wa-text: #e9edef;
+    --wa-text-dim: #8696a0;
+    --wa-danger: #f15c6d;
+    --wa-danger-wash: rgba(241, 92, 109, 0.12);
+
+    --wa-radius-lg: 22px;
+    --wa-radius-md: 12px;
+    --wa-radius-sm: 8px;
+
+    --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* =========================================================
+   BASE / STAGE
+   Height is capped to the viewport on purpose: everything
+   the user needs lives in one screen, no scrolling required.
+========================================================= */
+html, body {
+    height: 100%;
+}
+
 body {
-    background-color: #222831;
-    color: #EEEEEE;
-    font-family: sans-serif;
+    margin: 0;
+    height: 100dvh;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 18% 0%, rgba(0, 168, 132, 0.20), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(37, 211, 102, 0.10), transparent 50%),
+        var(--wa-bg-0);
+    background-size: 180% 180%, 180% 180%, 100% 100%;
+    background-position: 0% 0%, 100% 100%, 0 0;
+    animation: auraDrift 22s ease-in-out infinite;
+    color: var(--wa-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
 }
 
-h1 {
-    color: #76ABAE;
+/* The two glows slowly trade places, so the room feels lit
+   rather than lively — atmosphere, not a light show. */
+@keyframes auraDrift {
+    0%   { background-position: 0% 0%,   100% 100%, 0 0; }
+    50%  { background-position: 22% 12%, 78% 88%,  0 0; }
+    100% { background-position: 0% 0%,   100% 100%, 0 0; }
 }
 
-textarea {
-    resize: vertical;
+/* Ambient particles, kept subtle and slow so they read as
+   atmosphere rather than motion for its own sake. */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
 }
 
-#list-country-codes {
-    max-height: 300px;
-    overflow-y: scroll;
+body::before {
+    background-image: radial-gradient(rgba(233, 237, 239, 0.05) 1px, transparent 1px);
+    background-size: 46px 46px;
+    animation: driftUp 50s linear infinite;
 }
 
-#error-message, #result-url {
+body::after {
+    background-image: radial-gradient(rgba(37, 211, 102, 0.09) 1.5px, transparent 1.5px);
+    background-size: 96px 96px;
+    animation: driftDown 70s linear infinite;
+}
+
+@keyframes driftUp {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-460px); }
+}
+
+@keyframes driftDown {
+    from { transform: translateY(0); }
+    to   { transform: translateY(460px); }
+}
+
+.stage {
+    position: relative;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 3vh, 28px) clamp(12px, 3vw, 24px) clamp(30px, 6vh, 42px);
+    box-sizing: border-box;
+}
+
+/* Signature, added purely in CSS so the markup stays untouched. */
+.stage::after {
+    content: "by developsoftx";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: clamp(8px, 2vh, 14px);
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wa-text-dim);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* =========================================================
+   CARD
+   The clipped top-left corner is the signature: a nod to the
+   cut-off tail of a WhatsApp message bubble, not a decoration
+   bolted on for its own sake.
+========================================================= */
+.whatsapp-card {
+    width: 100%;
+    max-width: 440px;
+    max-height: 100%;
+    overflow-y: auto;
+    background: linear-gradient(180deg, var(--wa-panel), var(--wa-bg-1));
+    border: 1px solid var(--wa-border-soft);
+    border-radius: var(--wa-radius-lg);
+    border-top-left-radius: 4px;
+    padding: clamp(20px, 4vh, 30px) clamp(20px, 5vw, 30px);
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--wa-border) transparent;
+}
+
+.whatsapp-card::-webkit-scrollbar {
+    width: 6px;
+}
+
+.whatsapp-card::-webkit-scrollbar-thumb {
+    background: var(--wa-border);
+    border-radius: 6px;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+.wa-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.wa-mark {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wa-green-light);
+    background: var(--wa-green-wash);
+    border-radius: 12px;
+}
+
+.wa-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+    line-height: 1.2;
+    margin: 0;
+    color: var(--wa-text);
+}
+
+.wa-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+    color: var(--wa-text-dim);
+}
+
+/* =========================================================
+   HINT / ALERTS
+========================================================= */
+.wa-hint {
+    font-size: 0.82rem;
+    padding: 10px 14px;
+    line-height: 1.4;
+}
+
+.alert {
+    border-radius: var(--wa-radius-md);
+    color: var(--wa-text);
+}
+
+.alert-info {
+    background: rgba(134, 150, 160, 0.1);
+    border: 1px solid var(--wa-border-soft);
+}
+
+.alert-danger {
+    background: var(--wa-danger-wash);
+    border: 1px solid rgba(241, 92, 109, 0.35);
+}
+
+.alert-success {
+    background: var(--wa-green-wash);
+    border: 1px solid rgba(0, 168, 132, 0.35);
+}
+
+.wa-alert {
     display: none;
+    font-size: 0.88rem;
+}
+
+/* Whenever main.js flips one of these from display:none to
+   visible, it enters with motion instead of just popping in. */
+#result-url {
+    animation: wa-result-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#error-message {
+    animation: wa-error-in 0.4s ease;
+}
+
+@keyframes wa-result-in {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+        box-shadow: 0 0 0 0 rgba(0, 168, 132, 0);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(0) scale(1.01);
+        box-shadow: 0 0 0 6px rgba(0, 168, 132, 0.12);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 168, 132, 0);
+    }
+}
+
+@keyframes wa-error-in {
+    0%   { opacity: 0; transform: translateX(0); }
+    25%  { opacity: 1; transform: translateX(-6px); }
+    50%  { transform: translateX(5px); }
+    75%  { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+.form-label {
+    color: var(--wa-text);
+    font-size: 0.84rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.wa-optional {
+    color: var(--wa-text-dim);
+    font-weight: 400;
+}
+
+.form-text {
+    color: var(--wa-text-dim);
+    font-size: 0.76rem;
+    margin-top: 6px;
+}
+
+.form-control {
+    background-color: var(--wa-input);
+    border: 1px solid var(--wa-border);
+    color: var(--wa-text);
+    border-radius: var(--wa-radius-sm);
+    padding: 10px 12px;
+}
+
+.form-control::placeholder {
+    color: var(--wa-text-dim);
+}
+
+.form-control:focus {
+    background-color: var(--wa-input);
+    border-color: var(--wa-green);
+    color: var(--wa-text);
+    box-shadow: 0 0 0 3px var(--wa-green-wash);
+}
+
+textarea.form-control {
+    resize: none;
+}
+
+/* Phone row: dropdown + number side by side, wrapping only
+   on very narrow viewports so nothing gets cut off. */
+.phone-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 340px) {
+    .phone-row {
+        flex-wrap: wrap;
+    }
+}
+
+.wa-code-btn {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--wa-input);
+    border: 1px solid var(--wa-border);
+    color: var(--wa-text);
+    border-radius: var(--wa-radius-sm);
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.wa-code-btn:hover,
+.wa-code-btn:focus {
+    background-color: var(--wa-input);
+    border-color: var(--wa-green);
+    color: var(--wa-text);
+}
+
+.wa-flag {
+    font-size: 1rem;
+}
+
+.wa-code {
+    font-variant-numeric: tabular-nums;
+}
+
+#input-phone-number {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* =========================================================
+   DROPDOWN
+========================================================= */
+.dropdown-menu.wa-dropdown-menu {
+    background-color: var(--wa-panel);
+    border: 1px solid var(--wa-border);
+    border-radius: var(--wa-radius-md);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.country-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.country-list .dropdown-item {
+    color: var(--wa-text);
+    cursor: pointer;
+    border-radius: var(--wa-radius-sm);
+    padding: 7px 10px;
+    font-size: 0.88rem;
+}
+
+.country-list .dropdown-item:hover,
+.country-list .dropdown-item:focus {
+    background-color: var(--wa-green-wash);
+    color: var(--wa-text);
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+.wa-btn-primary {
+    background-color: var(--wa-green);
+    border: none;
+    color: #04120d;
+    font-weight: 700;
+    font-size: 0.94rem;
+    padding: 11px 16px;
+    border-radius: var(--wa-radius-sm);
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.wa-btn-primary:hover {
+    background-color: var(--wa-green-light);
+    color: #04120d;
+}
+
+.wa-btn-primary:active {
+    transform: scale(0.98);
+}
+
+.wa-btn-copy {
+    flex: none;
+    background: transparent;
+    border: 1px solid var(--wa-green);
+    color: var(--wa-green-light);
+    border-radius: var(--wa-radius-sm);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.wa-btn-copy:hover {
+    background-color: var(--wa-green);
+    color: #04120d;
+}
+
+/* Consistent, visible keyboard focus everywhere */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--wa-green-light);
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   RESULT
+========================================================= */
+.wa-result-label {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--wa-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.wa-result-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wa-result-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--wa-green-light);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.wa-result-link:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SMALL SCREENS
+   Keep the same one-screen promise on phones by trimming
+   spacing rather than changing the structure.
+========================================================= */
+@media (max-height: 700px) {
+    .wa-header { margin-bottom: 10px; }
+    .wa-hint { padding: 8px 12px; margin-bottom: 10px !important; }
+    .mb-3 { margin-bottom: 10px !important; }
+}
+
+@media (max-width: 380px) {
+    .whatsapp-card {
+        border-radius: 16px;
+        border-top-left-radius: 4px;
+    }
 }
